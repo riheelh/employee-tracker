@@ -44,7 +44,7 @@ const start = () => {
                     console.log(data);
                     break;
                 case 'Exit':
-                    console.log('Good Bye!')
+                    console.log('GoodBye!')
                     connection.end();
                     break;
             }
@@ -79,19 +79,18 @@ const addAllEmployee = () => {
             }
         ])
         .then((data) => {
-                const query = connection.query(
-                    //posibillity of classes use here ?
-                    'INSERT INTO employee SET ?', {
-                        first_name: data.first_name,
-                        last_name: data.last_name,
-                        role_id: data.role_id,
-                        manager_id: data.manager_id
-                    },
-                    (err) => {
-                        if (err) throw err;
-                        console.log('new Employee Added successfully.')
-                    });
-                    start();
+            connection.query(
+                'INSERT INTO employee SET ?', {
+                    first_name: data.first_name,
+                    last_name: data.last_name,
+                    role_id: data.role_id,
+                    manager_id: data.manager_id
+                },
+                (err) => {
+                    if (err) throw err;
+                    console.log('new Employee Added successfully.')
+                });
+            start();
         })
         .catch((error) => console.log(error));
 }
@@ -99,13 +98,22 @@ const addAllEmployee = () => {
 // print all employee infomration on terminal
 const viewAllEmployee = () => {
     connection.query(
-        'SELECT * FROM employee', (err, data) => {
-            if(err) throw err;
-            console.table(data)
-            connection.end();
+        `SELECT employee.id, employee.first_name, employee.last_name, role.title, department.name AS department, role.salary,
+        CONCAT(manager.first_name, ' ', manager.last_name) AS manager   
+        FROM employee
+        LEFT JOIN role ON employee.role_id = role.id
+        LEFT JOIN department ON department_id = department.id
+        LEFT JOIN employee manager ON employee.manager_id = manager.id;`, (err, data) => {
+            if (err) throw err;
+            console.table(data);
         }
     )
+    start();
 }
+
+
+
+
 
 
 
@@ -114,4 +122,4 @@ const viewAllEmployee = () => {
 connection.connect((err) => {
     if (err) throw err;
     start();
-  });
+});
