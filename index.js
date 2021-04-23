@@ -62,7 +62,7 @@ const start = () => {
 
 // Add new employee function
 const addAllEmployee = () => {
-    connection.query(`SELECT * FROM role;`, (err, results) => {
+    connection.query(`SELECT * FROM role`, (err, results) => {
         if (err) throw err;
         inquirer
             .prompt([{
@@ -76,8 +76,8 @@ const addAllEmployee = () => {
                     message: "Please enter last name"
                 },
                 {
-                    name: 'roleChoice',
                     type: 'list',
+                    name: 'roleChoice',
                     choices() {
                         const Array = [];
                         results.forEach(({title}) => {
@@ -86,50 +86,35 @@ const addAllEmployee = () => {
                         return Array;
                     },
                     message: 'Select employee role?',
-                    // have duplicate issue
                 },
-                // {
-                //     name: 'managerChoice',
-                //     type: 'list',
-                //     choices() {
-                //         const Array = [];
-                //         results.forEach(({manager}) => {
-                //             manager = manager || 0 
-                //             Array.push(manager);
-                            
-                //         })
-                //         return Array;
-                //     },
-                //     message: 'Select employee manager',
-                //     // have duplicate issue
-                // },
+                {
+                    type: 'input',
+                    name: 'managerChoice',
+                    message: 'Select employee manager',
+                },
             ])
             .then((data) => {
-
-                console.log(data)
-                console.log(results)
                 console.log(data.roleChoice)
-                
-                for(let i = 0; i < results.length; i++){
-                    if(data.roleChoice === results[i].title) {
-                        role_id === results[i].id
-                        connection.query(
-                            'INSERT INTO employee SET ?', {
+                let chosen;
+                results.forEach((item) => {
+                    if(item.title === data.roleChoice) {
+                        chosen = item
+                        console.log(chosen)
+                        connection.query('INSERT INTO employee SET ?', {
                                 first_name: data.first_name,
                                 last_name: data.last_name,
-                                role_id: results.role_id,
+                                role_id: chosen.id,
                                 // manager_id: data.manager_id
                             },
                             (err) => {
                                 if (err) throw err;
                                 console.log('new Employee Added successfully.')
+                                connection.end();
+                                start()
                             }
                         );
                     }
-                       
-                }
-                 
-                    
+                })                       
             })
             
             .catch((err) => console.error(err));
