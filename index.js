@@ -18,12 +18,11 @@ const connection = mysql.createConnection({
 
 //Init function
 const start = () => {
-    inquirer
-        .prompt({
+    inquirer.prompt({
             name: 'action',
             type: 'list',
             message: 'What would you like to do ?',
-            choices: ['View All Employees', 'View All Employees By Department', 'View All Employees By Manager', "Add Employee", "Remove Employee", "Update Manager", "Roles", "Exit"],
+            choices: ['View All Employees', 'View All Employees By Department', 'View All Employees By Manager', "Add Employee", "Remove Employee", "Update Manager", "Roles", "Departments", "Exit"],
         })
         .then((data) => {
             switch (data.action) {
@@ -48,6 +47,9 @@ const start = () => {
                 case 'Roles':
                     Roles();
                     break;
+                case 'Departments':
+                    Depts();
+                    break;
                 case 'Exit':
                     console.log('GoodBye!')
                     connection.end();
@@ -62,7 +64,6 @@ const viewAllEmployee = () => {
     connection.query(eAllTable, (err, data) => {
         if (err) throw err;
         console.table(data);
-        connection.end();
         start();
     })
 };
@@ -70,8 +71,7 @@ const viewAllEmployee = () => {
 const addEmployee = () => {
     connection.query(`SELECT * FROM role`, (err, results) => {
         if (err) throw err;
-        inquirer
-        .prompt([{
+        inquirer.prompt([{
                 type: "input",
                 name: "first_name",
                 message: "Please enter first name ?"
@@ -135,7 +135,7 @@ const Roles = () => {
         name: 'select',
         type: 'list',
         message: 'Choose the Roles action ?',
-        choices: ['View Roles', 'Add Roles', 'Update Roles', 'Back to main menu'],
+        choices: ['View Roles', 'Add Roles', 'Back to main menu'],
     })
     .then((data) => {
         switch (data.select) {
@@ -144,9 +144,6 @@ const Roles = () => {
                 break;
             case 'Add Roles':
                 addRoles();
-                break;
-            case 'Update Roles':
-                updateRoles();
                 break;
             case 'Back to main menu':
                 start();
@@ -167,8 +164,7 @@ const viewRoles = () => {
 const addRoles = () => {
     connection.query(`SELECT * FROM department`, (err, results) => {
         if (err) throw err;
-        inquirer
-        .prompt([{
+        inquirer.prompt([{
                 type: "input",
                 name: "title",
                 message: "Please enter role title ?"
@@ -202,7 +198,9 @@ const addRoles = () => {
                         department_id: chosen.id,
                     }, (err, res) => {
                         if (err) throw err;
-                        console.log('Role added successfully')
+                        console.log('Role added successfully');
+                        connection.end();
+                        Roles();
                     })
                 }
             })
@@ -210,11 +208,53 @@ const addRoles = () => {
     })
 }
 
+// ---- Departments ----
+const Depts = () => {
+    inquirer
+    .prompt({
+        name: 'select',
+        type: 'list',
+        message: 'Choose the department action ?',
+        choices: ['View Departments', 'Add Departments', 'Back to main menu'],
+    })
+    .then((data) => {
+        switch (data.select) {
+            case 'View Departments':
+                viewDepts();
+                break;
+            case 'Add Departments':
+                addDepts();
+                break;
+            case 'Back to main menu':
+                start();
+                break;
+        }
+    })
+};
 
+const viewDepts = () => {
+    connection.query(`SELECT * FROM department`, (err, results) => {
+        if (err) throw err;
+        console.table(results);
+        Depts();
+    })
+};
 
-
-
-
+const addDepts = () => {
+    inquirer.prompt([
+        {
+            type: "input",
+            name: "name",
+            message: "Please enter new department name ?"
+        }])
+    .then((data) => { 
+        connection.query(`INSERT INTO department SET ? `, { name: data.name}, (err, res) => {
+            if (err) throw err;
+            console.log('Department added successfully');
+            Depts();
+        })
+    })         
+}
 
 
 connection.connect((err) => {
