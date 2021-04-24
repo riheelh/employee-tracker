@@ -180,7 +180,7 @@ const Roles = () => {
         name: 'select',
         type: 'list',
         message: 'Choose the Roles action ?',
-        choices: ['View Roles', 'Add Roles', 'Back to main menu'],
+        choices: ['View Roles', 'Add Roles', 'Remove Roles','Back to main menu'],
     })
     .then((data) => {
         switch (data.select) {
@@ -190,6 +190,9 @@ const Roles = () => {
             case 'Add Roles':
                 addRoles();
                 break;
+            case 'Remove Roles':
+                removeRoles();
+                break;   
             case 'Back to main menu':
                 start();
                 break;
@@ -251,6 +254,50 @@ const addRoles = () => {
     })
 }
 
+const removeRoles = () => {
+    console.log('')
+    connection.query(`SELECT * FROM role`, (err, results) => {
+        if(err) throw err;
+        // console.table(res)
+        inquirer.prompt([ 
+            {
+                type: "list",
+                name: "select",
+                choices() {
+                    const Array = [];
+                    results.forEach(({title})=> {
+                        Array.push(title)
+                    })
+                    return Array;
+                },
+                message: "select the role to remove ?"
+            },
+            {
+                name: "confirmRemove",
+                type: "input",
+                message: "Are you sure you want to remove (y/n)?",
+                validate: function confirmRemoval(ans){
+                    if(ans !== '' && ans === 'y' || ans !== '' && ans === 'n'){
+                        return true
+                    } 
+                }
+            },
+        ])
+        .then((data) => {
+            console.log(data);
+            if (data.confirmRemove === 'y') {
+                connection.query(`DELETE FROM role WHERE ?`, {title: data.select}, (err, res) => {
+                    if(err) throw err;
+                    console.log('Role deleted successfully');
+                    Roles();
+                })
+            } else {
+                console.log('no action taken');
+                Roles();
+            }
+        })
+    });
+};
 
 // ------- Departments functions -------
 const Depts = () => {
@@ -259,7 +306,7 @@ const Depts = () => {
         name: 'select',
         type: 'list',
         message: 'Choose the department action ?',
-        choices: ['View Departments', 'Add Departments', 'Back to main menu'],
+        choices: ['View Departments', 'Add Departments', 'Remove Departments','Back to main menu'],
     })
     .then((data) => {
         switch (data.select) {
@@ -269,6 +316,9 @@ const Depts = () => {
             case 'Add Departments':
                 addDepts();
                 break;
+            case 'Remove Departments':
+                removeDepts();
+                break;    
             case 'Back to main menu':
                 start();
                 break;
@@ -299,6 +349,50 @@ const addDepts = () => {
         })
     })         
 }
+
+const removeDepts = () => {
+    connection.query(`SELECT * FROM department`, (err, results) => {
+        if(err) throw err;
+        inquirer.prompt([ 
+            {
+                type: "list",
+                name: "select",
+                choices() {
+                    const Array = [];
+                    results.forEach(({name})=> {
+                        Array.push(name);
+                    })
+                    return Array;
+                },
+                message: "select the department to remove ?"
+            },
+            {
+                name: "confirmRemove",
+                type: "input",
+                message: "Are you sure you want to remove (y/n)?",
+                validate: function confirmRemoval(ans){
+                    if(ans !== '' && ans === 'y' || ans !== '' && ans === 'n'){
+                        return true;
+                    } 
+                }
+            },
+        ])
+        .then((data) => {
+            console.log(data);
+            if (data.confirmRemove === 'y') {
+                connection.query(`DELETE FROM department WHERE ?`, {name: data.select}, (err, res) => {
+                    if(err) throw err;
+                    console.log('Department deleted successfully');
+                    Depts();
+                })
+            } else {
+                console.log('no action taken');
+                Depts();
+            }
+        })
+    });
+};
+
 
 // start the app
 connection.connect((err) => {
