@@ -80,7 +80,7 @@ const Employee = () => {
             case 'Back to main menu':
                 start();
                 break;
-        }
+        };
     })
 };
 
@@ -89,7 +89,7 @@ const viewAllEmployee = () => {
         if (err) throw err;
         console.table(data);
         Employee();
-    })
+    });
 };
 
 const addEmployee = () => {
@@ -110,9 +110,7 @@ const addEmployee = () => {
                 name: 'roleChoice',
                 choices() {
                     const Array = [];
-                    results.forEach(({
-                        title
-                    }) => {
+                    results.forEach(({title}) => {
                         Array.push(title);
                     });
                     return Array;
@@ -126,12 +124,10 @@ const addEmployee = () => {
             },
         ])
         .then((data) => {
-            console.log(data.roleChoice)
             let chosen;
             results.forEach((item) => {
                 if (item.title === data.roleChoice) {
-                    chosen = item
-                    console.log(chosen)
+                    chosen = item;
                     connection.query('INSERT INTO employee SET ?', {
                             first_name: data.first_name,
                             last_name: data.last_name,
@@ -139,11 +135,11 @@ const addEmployee = () => {
                             // manager_id: data.manager_id
                         },(err) => {
                             if (err) throw err;
-                            console.log('new Employee Added successfully.')
-                            Employee()
+                            console.log('new Employee Added successfully.');
+                            Employee();
                         }
                     );
-                }
+                };
             })
         })
         .catch((err) => console.error(err));
@@ -154,7 +150,7 @@ const removeEmployee = () => {
     console.log('')
     connection.query(`SELECT * FROM employee`, (err, res) => {
         if(err) throw err;
-        console.table(res)
+        console.table(res);
         inquirer.prompt(
             {
                 type: "input",
@@ -165,8 +161,8 @@ const removeEmployee = () => {
         .then((data) => {
             connection.query(`DELETE FROM employee WHERE ?`, {id: data.id}, (err, res) => {
                 if(err) throw err;
-                console.log('Employee deleted successfully')
-                Employee()
+                console.log('Employee deleted successfully');
+                Employee();
             })
         })
     })
@@ -238,7 +234,7 @@ const addRoles = () => {
             let chosen;
             results.forEach((item) => {
                 if (item.name === data.dept) {
-                    chosen = item
+                    chosen = item;
                     connection.query(`INSERT INTO role SET ? `, {
                         title: data.title,
                         salary: data.salary,
@@ -249,16 +245,15 @@ const addRoles = () => {
                         Roles();
                     })
                 }
-            })
+            });
         })         
-    })
-}
+    });
+};
 
 const removeRoles = () => {
-    console.log('')
+    console.log('');
     connection.query(`SELECT * FROM role`, (err, results) => {
         if(err) throw err;
-        // console.table(res)
         inquirer.prompt([ 
             {
                 type: "list",
@@ -266,7 +261,7 @@ const removeRoles = () => {
                 choices() {
                     const Array = [];
                     results.forEach(({title})=> {
-                        Array.push(title)
+                        Array.push(title);
                     })
                     return Array;
                 },
@@ -278,7 +273,7 @@ const removeRoles = () => {
                 message: "Are you sure you want to remove (y/n)?",
                 validate: function confirmRemoval(ans){
                     if(ans !== '' && ans === 'y' || ans !== '' && ans === 'n'){
-                        return true
+                        return true;
                     } 
                 }
             },
@@ -301,8 +296,7 @@ const removeRoles = () => {
 
 // ------- Departments functions -------
 const Depts = () => {
-    inquirer
-    .prompt({
+    inquirer.prompt({
         name: 'select',
         type: 'list',
         message: 'Choose the department action ?',
