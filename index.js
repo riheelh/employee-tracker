@@ -16,55 +16,79 @@ const connection = mysql.createConnection({
     database: 'trackingDB',
 });
 
-//Init function
+//start function
 const start = () => {
     inquirer.prompt({
             name: 'action',
             type: 'list',
             message: 'What would you like to do ?',
-            choices: ['View All Employees', 'View All Employees By Department', 'View All Employees By Manager', "Add Employee", "Remove Employee", "Update Manager", "Roles", "Departments", "Exit"],
+            choices: ['Employees', "Roles", "Departments", "Exit"],
         })
-        .then((data) => {
-            switch (data.action) {
-                case 'View All Employees':
-                    viewAllEmployee();
-                    break;
-                case 'View All Employees By Department':
-                    console.log(data);
-                    break;
-                case 'View All Employees By Manager':
-                    console.log(data);
-                    break;
-                case 'Add Employee':
-                    addEmployee();
-                    break;
-                case 'Remove Employee':
-                    console.log(data);
-                    break;
-                case 'Update Manager':
-                    console.log(data);
-                    break;
-                case 'Roles':
-                    Roles();
-                    break;
-                case 'Departments':
-                    Depts();
-                    break;
-                case 'Exit':
-                    console.log('GoodBye!')
-                    connection.end();
-                    break;
-            }
-        })
-        .catch((error) => console.log(error));
+    .then((data) => {
+        switch (data.action) {
+            case 'Employees':
+                Employee();
+                break;
+            case 'Roles':
+                Roles();
+                break;
+            case 'Departments':
+                Depts();
+                break;
+            case 'Exit':
+                console.log('GoodBye!')
+                connection.end();
+                break;
+        }
+    })
+    .catch((error) => console.log(error));
 };
 
-// ---- Employee ----
+
+// ------- Employee functions -------
+const Employee = () => {
+    inquirer
+    .prompt({
+        name: 'select',
+        type: 'list',
+        message: 'Choose the Roles action ?',
+        choices: ['View All Employees', 'View All Employees By Department', 'View All Employees By Manager', 'Add Employee', "Remove Employee", "Update Employee Role", "Update Employee Manager", 'Back to main menu'],
+    })
+    .then((data) => {
+        switch (data.select) {
+            case 'View All Employees':
+                viewAllEmployee();
+                break;
+            case 'View All Employees By Department':
+                console.log(data);
+                break;
+            case 'View All Employees By Manager':
+                console.log(data);
+                break;
+            case 'Add Employee':
+                addEmployee();
+                break;
+            case 'Remove Employee':
+                removeEmployee();
+                break;
+            case 'Update Employee Role':
+                console.log(data);
+                break;
+            case 'Update Employee Manager':
+                console.log(data);
+                break;
+            case 'Back to main menu':
+                start();
+                break;
+        }
+    })
+};
+
 const viewAllEmployee = () => {
     connection.query(eAllTable, (err, data) => {
         if (err) throw err;
         console.table(data);
-        start();
+        Employee();
     })
 };
 
@@ -113,12 +137,10 @@ const addEmployee = () => {
                             last_name: data.last_name,
                             role_id: chosen.id,
                             // manager_id: data.manager_id
-                        },
-                        (err) => {
+                        },(err) => {
                             if (err) throw err;
                             console.log('new Employee Added successfully.')
-                            connection.end();
-                            start()
+                            Employee()
                         }
                     );
                 }
@@ -128,10 +150,33 @@ const addEmployee = () => {
     })
 }
 
-// ---- Roles ----
+const removeEmployee = () => {
+    console.log('')
+    connection.query(`SELECT * FROM employee`, (err, res) => {
+        if(err) throw err;
+        console.table(res)
+        inquirer.prompt(
+            {
+                type: "input",
+                name: "id",
+                message: "Enter employee id to remove ?"
+            }
+        )
+        .then((data) => {
+            connection.query(`DELETE FROM employee WHERE ?`, {id: data.id}, (err, res) => {
+                if(err) throw err;
+                console.log('Employee deleted successfully')
+                Employee()
+            })
+        })
+    })
+}
+
+
+// ------- Roles functions -------
 const Roles = () => {
-    inquirer
-    .prompt({
+    inquirer.prompt(
+        {
         name: 'select',
         type: 'list',
         message: 'Choose the Roles action ?',
@@ -156,7 +201,6 @@ const viewRoles = () => {
     connection.query(`SELECT * FROM role`, (err, results) => {
         if (err) throw err;
         console.table(results);
-        // connection.end();
         Roles();
     })
 };
@@ -199,7 +243,6 @@ const addRoles = () => {
                     }, (err, res) => {
                         if (err) throw err;
                         console.log('Role added successfully');
-                        connection.end();
                         Roles();
                     })
                 }
@@ -208,7 +251,8 @@ const addRoles = () => {
     })
 }
 
-// ---- Departments ----
+
+// ------- Departments functions -------
 const Depts = () => {
     inquirer
     .prompt({
@@ -256,7 +300,7 @@ const addDepts = () => {
     })         
 }
 
-
+// start the app
 connection.connect((err) => {
     if (err) throw err;
     start();
