@@ -72,7 +72,7 @@ const Employee = () => {
                 removeEmployee();
                 break;
             case 'Update Employee Role':
-                console.log(data);
+                updateEmployeeRole();
                 break;
             case 'Update Employee Manager':
                 console.log(data);
@@ -168,6 +168,79 @@ const removeEmployee = () => {
     })
 }
 
+const updateEmployeeRole = () => {
+    connection.query(`SELECT employee.id, CONCAT(employee.id, '.', employee.first_name, ' ' , employee.last_name) AS fullname, employee.role_id, CONCAT(role.id, '.', role.title) AS Role
+    FROM employee INNER JOIN role on employee.role_id = role.id;`, (err, results) => {
+        if (err) throw err;
+        inquirer.prompt([
+            {
+                type: 'list',
+                name: 'empSelect',
+                choices() {
+                    let Array = [];
+                    results.forEach(({fullname}) => {
+                        Array.push(fullname);
+                    });
+                    return Array;
+                },
+             
+                message: 'Select employee ?',
+            },
+            {
+                type: 'list',
+                name: 'Choice',
+                choices() {
+                    let Array = [];
+                    
+                    results.forEach(({Role}) => {
+                        Array.push(Role);
+                    });
+                    const uniqueRoles = [...new Set(Array)];
+                    return uniqueRoles;
+                },
+                message: 'Select employee new role ?',
+            },
+        ])
+        .then((data) => {
+            let chosenItem;
+            results.forEach((item) => {
+                n = data.empSelect.indexOf(".");
+                emp_id_sub = data.empSelect.substring(0,n)
+                // 0123456
+                // 2021.
+                // indexof(")") -> 5
+                // substring(1,5) -> 2021
+                if (item.id === parseInt(emp_id_sub)) {
+                    chosenItem = item
+                    // console.log(item)
+                    // 0123456
+                    // (2021).
+                    // indexof(")") -> 5
+                    // substring(1,5) -> 2021
+                    m = data.Choice.indexOf(")");
+                    role_id_sub = data.Choice.substring(1,m)                   
+                    connection.query('UPDATE employee SET ? WHERE ?',
+                      [
+                        {
+                          role_id: role_id_sub ,
+                        },
+                        {
+                          id: emp_id_sub,
+                        },
+                      ],
+                      (error) => {
+                        if (error) throw err;
+                        console.log('Role updated successfully!');
+                        Employee()
+                      }
+                    ); 
+                }
+            })
+        }).catch((err) => {
+            if(err) throw err; console.log(err)
+        })
+    })
+}
 
 // ------- Roles functions -------
 const Roles = () => {
