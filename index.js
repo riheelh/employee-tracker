@@ -69,7 +69,7 @@ const Employee = () => {
                 updateEmployeeRole();
                 break;
             case 'Update Employee Manager':
-                console.log(data);
+                updateEmployeeManager();
                 break;
             case 'Back to main menu':
                 start();
@@ -90,7 +90,6 @@ const viewAllEmployee = () => {
         Employee();
     });
 };
-
 
 // not working, to be reviewed
 // var deptArray = []
@@ -208,9 +207,6 @@ const viewEmployeeByManager = () => {
     });  
 }
 
-
-
-
 const addEmployee = () => {
     connection.query(`SELECT * FROM role`, (err, results) => {
         if (err) throw err;
@@ -254,7 +250,9 @@ const addEmployee = () => {
                             // manager_id: data.manager_id
                         },(err) => {
                             if (err) throw err;
+                            console.log('======================================')
                             console.log('new Employee Added successfully.');
+                            console.log('======================================')
                             Employee();
                         }
                     );
@@ -280,7 +278,9 @@ const removeEmployee = () => {
         .then((data) => {
             connection.query(`DELETE FROM employee WHERE ?`, {id: data.id}, (err, res) => {
                 if(err) throw err;
+                console.log('======================================');
                 console.log('Employee deleted successfully');
+                console.log('======================================');
                 Employee();
             })
         })
@@ -346,11 +346,82 @@ const updateEmployeeRole = () => {
                       ],
                       (error) => {
                         if (error) throw err;
+                        console.log('======================================');
                         console.log('Role updated successfully!');
+                        console.log('======================================');
                         Employee()
                     }); 
                 };
             });
+        })
+        .catch((err) => {
+            if(err) throw err; console.log(err)
+        });
+    });
+};
+
+const updateEmployeeManager = () => {
+    connection.query(`
+    SELECT id, CONCAT(first_name, ' ', last_name) AS Employee
+    FROM employee;`, 
+    (err, results) => {
+        if (err) throw err;
+        inquirer.prompt([
+            {
+                type: 'list',
+                name: 'empSelect',
+                choices() {
+                    let Array = [];
+                    results.forEach(({Employee}) => {
+                        Array.push(Employee);
+                    });
+                    return Array;
+                },
+                message: 'Select employee fullname ?',
+            },
+            {
+                type: 'list',
+                name: 'mgrSelect',
+                choices() {
+                    let Array = [];
+                    results.forEach(({Employee}) => {
+                        Array.push(Employee);
+                    });
+                    return Array;
+                },
+                message: 'Select manager that employee to report to ?',
+            },
+        ])
+        .then((data) => {
+            let chosenEmp, chosenMgr;
+            results.forEach((item) => {
+                if (item.Employee === data.empSelect) {
+                    chosenEmp = item;
+                };   
+            })
+
+            results.forEach((item) => {
+                if (item.Employee === data.mgrSelect) {
+                    chosenMgr = item;
+                    console.log(chosenMgr.id);
+                };   
+            })
+            connection.query('UPDATE employee SET ? WHERE ?',
+            [
+              {
+                manager_id: chosenMgr.id,
+              },
+              {
+                id: chosenEmp.id,
+              },
+            ],
+            (error) => {
+              if (error) throw err;
+              console.log('======================================');
+              console.log('Emploee manager updated successfully!');
+              console.log('======================================');
+              Employee()
+          }); 
         })
         .catch((err) => {
             if(err) throw err; console.log(err)
@@ -431,7 +502,9 @@ const addRoles = () => {
                         department_id: chosen.id,
                     }, (err, res) => {
                         if (err) throw err;
+                        console.log('======================================');
                         console.log('Role added successfully');
+                        console.log('======================================');
                         Roles();
                     })
                 }
@@ -473,11 +546,15 @@ const removeRoles = () => {
             if (data.confirmRemove === 'y') {
                 connection.query(`DELETE FROM role WHERE ?`, {title: data.select}, (err, res) => {
                     if(err) throw err;
+                    console.log('======================================');
                     console.log('Role deleted successfully');
+                    console.log('======================================');
                     Roles();
                 })
             } else {
+                console.log('======================================')
                 console.log('no action taken');
+                console.log('======================================')
                 Roles();
             }
         })
@@ -555,11 +632,6 @@ const viewDeptBudget = () => {
     });
 };
 
-
-
-
-
-
 const addDepts = () => {
     inquirer.prompt([
         {
@@ -570,7 +642,9 @@ const addDepts = () => {
     .then((data) => { 
         connection.query(`INSERT INTO department SET ? `, { name: data.name}, (err, res) => {
             if (err) throw err;
+            console.log('======================================')
             console.log('Department added successfully');
+            console.log('======================================')
             Depts();
         })
     })         
@@ -608,11 +682,15 @@ const removeDepts = () => {
             if (data.confirmRemove === 'y') {
                 connection.query(`DELETE FROM department WHERE ?`, {name: data.select}, (err, res) => {
                     if(err) throw err;
+                    console.log('======================================')
                     console.log('Department deleted successfully');
+                    console.log('======================================')
                     Depts();
                 })
             } else {
+                console.log('======================================')
                 console.log('no action taken');
+                console.log('======================================')
                 Depts();
             }
         })
