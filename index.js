@@ -93,41 +93,41 @@ const viewAllEmployee = () => {
 
 
 // not working, to be reviewed
-var deptArray = []
-function deptNames22 () {
-    connection.query("SELECT * FROM department", (err, results) => {
-        // if(err) throw err
-         results.forEach(({name}) => {
-             deptArray.push(name)
-         })
-        // if(err) throw err
-        // results.map((item) => {
-        //    return item.name
-        // })
-        // console.log(deptArray)
-        console.log(deptArray)
-        return deptArray
-    })
-}
+// var deptArray = []
+// function deptNames22 () {
+//     connection.query("SELECT * FROM department", (err, results) => {
+//         // if(err) throw err
+//          results.forEach(({name}) => {
+//              deptArray.push(name)
+//          })
+//         // if(err) throw err
+//         // results.map((item) => {
+//         //    return item.name
+//         // })
+//         // console.log(deptArray)
+//         console.log(deptArray)
+//         return deptArray
+//     })
+// }
 
-function viewEmployeeByDept22 () {
-    // deptNames()
-        inquirer.prompt(
-            {
-                type: "list",
-                name: "select-dept",
-                choices() {
-                    return deptArray
-                },
-                message: "Please select department to view its employee ?",
-            }
-        )
-        .then((data) => {
-            console.log(data)
-        })
-        .catch((err) => console.error(err));
+// function viewEmployeeByDept22 () {
+//     // deptNames()
+//         inquirer.prompt(
+//             {
+//                 type: "list",
+//                 name: "select-dept",
+//                 choices() {
+//                     return deptArray
+//                 },
+//                 message: "Please select department to view its employee ?",
+//             }
+//         )
+//         .then((data) => {
+//             console.log(data)
+//         })
+//         .catch((err) => console.error(err));
 
-}
+// }
 
 const viewEmployeeByDept = () => {
     connection.query(`SELECT * FROM department`, (err, results) => {
@@ -491,7 +491,7 @@ const Depts = () => {
         name: 'select',
         type: 'list',
         message: 'Choose the department action ?',
-        choices: ['View Departments', 'Add Departments', 'Remove Departments','Back to main menu'],
+        choices: ['View Departments', 'Add Departments', 'Remove Departments', 'View Department Budget','Back to main menu'],
     })
     .then((data) => {
         switch (data.select) {
@@ -503,7 +503,10 @@ const Depts = () => {
                 break;
             case 'Remove Departments':
                 removeDepts();
-                break;    
+                break;
+            case 'View Department Budget':
+                viewDeptBudget();
+                break;   
             case 'Back to main menu':
                 start();
                 break;
@@ -518,6 +521,44 @@ const viewDepts = () => {
         Depts();
     })
 };
+
+const viewDeptBudget = () => {
+    connection.query(`SELECT * FROM department`, (err, results) => {
+        if(err) throw err;
+        inquirer.prompt([
+                {
+                    type: "list",
+                    name: "select",
+                    choices() {
+                        const Array = [];
+                        results.forEach(({name})=> {
+                            Array.push(name);
+                        })
+                        return Array;
+                    },
+                    message: "select the department to view utlilized budget ?"
+                },
+        ])
+        .then((data) => {
+                connection.query(`
+                SELECT name AS department, SUM(salary) AS Budget
+                FROM employee LEFT JOIN role ON employee.role_id = role.id 
+                LEFT JOIN department ON role.department_id = department.id
+                WHERE name = "${data.select}";`, 
+                (err, res) => {
+                    if(err) throw err;
+                    console.table(res);
+                    Depts();
+                });
+        })
+        .catch((err) => console.error(err));
+    });
+};
+
+
+
+
+
 
 const addDepts = () => {
     inquirer.prompt([
