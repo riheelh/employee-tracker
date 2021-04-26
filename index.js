@@ -1,13 +1,7 @@
 const mysql = require('mysql');
 const inquirer = require('inquirer');
 const cTable = require('console.table');
-const eAllTable = `SELECT employee.id, employee.first_name, employee.last_name, role.title, department.name AS department, role.salary,
-CONCAT(manager.first_name, ' ', manager.last_name) AS manager
-FROM employee
-LEFT JOIN role ON employee.role_id = role.id
-LEFT JOIN department ON department_id = department.id
-LEFT JOIN employee manager ON employee.manager_id = manager.id;
-`
+
 const connection = mysql.createConnection({
     host: 'localhost',
     port: 3306,
@@ -51,7 +45,7 @@ const Employee = () => {
     .prompt({
         name: 'select',
         type: 'list',
-        message: 'Choose the Roles action ?',
+        message: 'Choose employee action ?',
         choices: ['View All Employees', 'View All Employees By Department', 'View All Employees By Manager', 'Add Employee', "Remove Employee", "Update Employee Role", "Update Employee Manager", 'Back to main menu'],
     })
     .then((data) => {
@@ -60,7 +54,7 @@ const Employee = () => {
                 viewAllEmployee();
                 break;
             case 'View All Employees By Department':
-                console.log(data);
+                viewEmployeeByDept();
                 break;
             case 'View All Employees By Manager':
                 console.log(data);
@@ -85,10 +79,85 @@ const Employee = () => {
 };
 
 const viewAllEmployee = () => {
-    connection.query(eAllTable, (err, data) => {
+    connection.query(`SELECT employee.id, employee.first_name, employee.last_name, role.title, department.name AS department, role.salary,
+    CONCAT(manager.first_name, ' ', manager.last_name) AS manager
+    FROM employee
+    LEFT JOIN role ON employee.role_id = role.id
+    LEFT JOIN department ON department_id = department.id
+    LEFT JOIN employee manager ON employee.manager_id = manager.id;`, (err, data) => {
         if (err) throw err;
         console.table(data);
         Employee();
+    });
+};
+
+
+//not working, to be reviewed
+// var deptArray = []
+// function deptNames22 () {
+//     connection.query("SELECT * FROM department", (err, results) => {
+//         // if(err) throw err
+//          results.forEach(({name}) => {
+//              deptArray.push(name)
+//          })
+//         // if(err) throw err
+//         // results.map((item) => {
+//         //    return item.name
+//         // })
+//         // console.log(deptArray)
+//         console.log(deptArray)
+//         return deptArray
+//     })
+// }
+
+// function viewEmployeeByDept22 () {
+//     // deptNames()
+//         inquirer.prompt(
+//             {
+//                 type: "list",
+//                 name: "select-dept",
+//                 choices() {
+//                     return deptArray
+//                 },
+//                 message: "Please select department to view its employee ?",
+//             }
+//         )
+//         .then((data) => {
+//             console.log(data)
+//         })
+//         .catch((err) => console.error(err));
+
+// }
+
+const viewEmployeeByDept = () => {
+    connection.query(`SELECT * FROM department`, (err, results) => {
+        if(err) throw err;
+        inquirer.prompt([
+                {
+                    type: "list",
+                    name: "select",
+                    choices() {
+                        const Array = [];
+                        results.forEach(({name})=> {
+                            Array.push(name);
+                        })
+                        return Array;
+                    },
+                    message: "select the department to remove ?"
+                },
+        ])
+        .then((data) => {
+                connection.query(`
+                SELECT employee.id, employee.first_name, employee.last_name, name AS department, title
+                FROM employee LEFT JOIN role ON employee.role_id = role.id 
+                LEFT JOIN department ON role.department_id = department.id
+                WHERE name = '${data.select}'; `, (err, res) => {
+                    if(err) throw err;
+                    console.table(res);
+                    Employee();
+                });
+        })
+        .catch((err) => console.error(err));
     });
 };
 
@@ -202,7 +271,6 @@ const updateEmployeeRole = () => {
             },
         ])
         .then((data) => {
-            let chosenItem;
             results.forEach((item) => {
                 n = data.empSelect.indexOf(".");
                 emp_id_sub = data.empSelect.substring(0,n)
@@ -211,8 +279,6 @@ const updateEmployeeRole = () => {
                 // indexof(")") -> 5
                 // substring(1,5) -> 2021
                 if (item.id === parseInt(emp_id_sub)) {
-                    chosenItem = item
-                    // console.log(item)
                     // 0123456
                     // (2021).
                     // indexof(")") -> 5
@@ -232,15 +298,16 @@ const updateEmployeeRole = () => {
                         if (error) throw err;
                         console.log('Role updated successfully!');
                         Employee()
-                      }
-                    ); 
-                }
-            })
-        }).catch((err) => {
-            if(err) throw err; console.log(err)
+                    }); 
+                };
+            });
         })
-    })
-}
+        .catch((err) => {
+            if(err) throw err; console.log(err)
+        });
+    });
+};
+
 
 // ------- Roles functions -------
 const Roles = () => {
@@ -366,6 +433,7 @@ const removeRoles = () => {
         })
     });
 };
+
 
 // ------- Departments functions -------
 const Depts = () => {
