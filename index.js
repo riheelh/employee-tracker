@@ -57,7 +57,7 @@ const Employee = () => {
                 viewEmployeeByDept();
                 break;
             case 'View All Employees By Manager':
-                console.log(data);
+                viewEmployeeByManager();
                 break;
             case 'Add Employee':
                 addEmployee();
@@ -92,42 +92,42 @@ const viewAllEmployee = () => {
 };
 
 
-//not working, to be reviewed
-// var deptArray = []
-// function deptNames22 () {
-//     connection.query("SELECT * FROM department", (err, results) => {
-//         // if(err) throw err
-//          results.forEach(({name}) => {
-//              deptArray.push(name)
-//          })
-//         // if(err) throw err
-//         // results.map((item) => {
-//         //    return item.name
-//         // })
-//         // console.log(deptArray)
-//         console.log(deptArray)
-//         return deptArray
-//     })
-// }
+// not working, to be reviewed
+var deptArray = []
+function deptNames22 () {
+    connection.query("SELECT * FROM department", (err, results) => {
+        // if(err) throw err
+         results.forEach(({name}) => {
+             deptArray.push(name)
+         })
+        // if(err) throw err
+        // results.map((item) => {
+        //    return item.name
+        // })
+        // console.log(deptArray)
+        console.log(deptArray)
+        return deptArray
+    })
+}
 
-// function viewEmployeeByDept22 () {
-//     // deptNames()
-//         inquirer.prompt(
-//             {
-//                 type: "list",
-//                 name: "select-dept",
-//                 choices() {
-//                     return deptArray
-//                 },
-//                 message: "Please select department to view its employee ?",
-//             }
-//         )
-//         .then((data) => {
-//             console.log(data)
-//         })
-//         .catch((err) => console.error(err));
+function viewEmployeeByDept22 () {
+    // deptNames()
+        inquirer.prompt(
+            {
+                type: "list",
+                name: "select-dept",
+                choices() {
+                    return deptArray
+                },
+                message: "Please select department to view its employee ?",
+            }
+        )
+        .then((data) => {
+            console.log(data)
+        })
+        .catch((err) => console.error(err));
 
-// }
+}
 
 const viewEmployeeByDept = () => {
     connection.query(`SELECT * FROM department`, (err, results) => {
@@ -143,7 +143,7 @@ const viewEmployeeByDept = () => {
                         })
                         return Array;
                     },
-                    message: "select the department to remove ?"
+                    message: "select the department to view employee information ?"
                 },
         ])
         .then((data) => {
@@ -160,6 +160,56 @@ const viewEmployeeByDept = () => {
         .catch((err) => console.error(err));
     });
 };
+
+const viewEmployeeByManager = () => {
+    connection.query(`
+    SELECT DISTINCT CONCAT(m.first_name, ' ', m.last_name) AS Manager, m.id
+    FROM employee e JOIN employee m
+    WHERE e.manager_id = m.id;`, (err, results) => {
+        if(err) throw err;
+        inquirer.prompt([
+                {
+                    type: "list",
+                    name: "select",
+                    choices() {
+                        const Array = [];
+                        results.forEach(({Manager})=> {
+                            Array.push(Manager);
+                        })
+                        return Array;
+                    },
+                    message: "Which employee do you want to see direct reports for ?"
+                },
+        ])
+        .then((data) => {
+            // var managerName = data.select
+            // var n = managerName.indexOf(' ')
+            // var first = managerName.substring(0, n)
+            // var last = managerName.substring(n)
+            // console.log(`first name: ${first} last name: ${last.trim()}`)
+            let chosen;
+            results.forEach((item) => {
+                if (item.Manager === data.select) {
+                    chosen = item;
+                    console.log(chosen)
+                };
+            })
+            connection.query(`
+            SELECT employee.id, employee.first_name, employee.last_name, name AS department, title
+            FROM employee LEFT JOIN role ON employee.role_id = role.id 
+            LEFT JOIN department ON role.department_id = department.id
+            WHERE employee.manager_id = ${chosen.id};`, (err, res) => {
+                if(err) throw err;
+                console.table(res);
+                Employee();
+            });
+        })
+        .catch((err) => console.error(err));
+    });  
+}
+
+
+
 
 const addEmployee = () => {
     connection.query(`SELECT * FROM role`, (err, results) => {
