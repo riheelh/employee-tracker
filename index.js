@@ -66,6 +66,10 @@ const roleNames = () => {
 };
 
 
+
+
+
+
 const viewTest = async () => {
     const deptChoices = []
     const deptArr = await deptNames()
@@ -78,21 +82,23 @@ const viewTest = async () => {
         inquirer.prompt([
             {
                 type: "list",
-                name: "select-dept",
+                name: "selectdept",
                 choices: deptChoices,
                 message: "Please select department ?",
-            },
+            }
             // {
             //     type: "list",
-            //     name: "select-role",
+            //     name: "selectrole",
             //     choices: roleChoices,
             //     message: "Please select role ?",
             // }
-        ]
-        )
-        .then((data) => {
+        ])
+        .then(data => {
             console.log(data)
-            // console.log(data.select-role)
+            console.log(deptArr)
+            let deptID = deptArr.filter(index => index.name.includes(data.selectdept))
+            console.log(deptID[0].id)
+            // console.log(data.selectrole)
             Employee();
         })
         .catch((err) => console.error(err));
@@ -152,6 +158,7 @@ const viewAllEmployee = () => {
         console.table(data);
         Employee();
     });
+};
 
 const viewEmployeeByDept = async () => {
     const deptChoices = []
@@ -200,11 +207,6 @@ const viewEmployeeByManager = () => {
                 },
         ])
         .then((data) => {
-            // var managerName = data.select
-            // var n = managerName.indexOf(' ')
-            // var first = managerName.substring(0, n)
-            // var last = managerName.substring(n)
-            // console.log(`first name: ${first} last name: ${last.trim()}`)
             let chosen;
             results.forEach((item) => {
                 if (item.Manager === data.select) {
@@ -457,7 +459,8 @@ const Roles = () => {
         type: 'list',
         message: 'Choose the Roles action ?',
         choices: ['View Roles', 'Add Roles', 'Remove Roles','Back to main menu'],
-    })
+         }
+    )
     .then((data) => {
         switch (data.select) {
             case 'View Roles':
@@ -618,20 +621,15 @@ const viewDepts = () => {
     })
 };
 
-const viewDeptBudget = () => {
-    connection.query(`SELECT * FROM department`, (err, results) => {
-        if(err) throw err;
+const viewDeptBudget = async () => {
+    const deptChoices = [];
+    const deptArr = await deptNames();
+    deptArr.map(({name}) => {deptChoices.push(name)});
         inquirer.prompt([
                 {
                     type: "list",
                     name: "select",
-                    choices() {
-                        const Array = [];
-                        results.forEach(({name})=> {
-                            Array.push(name);
-                        })
-                        return Array;
-                    },
+                    choices: deptChoices,
                     message: "select the department to view utlilized budget ?"
                 },
         ])
@@ -648,7 +646,6 @@ const viewDeptBudget = () => {
                 });
         })
         .catch((err) => console.error(err));
-    });
 };
 
 const addDepts = () => {
@@ -666,56 +663,50 @@ const addDepts = () => {
             console.log('======================================')
             Depts();
         })
-    })         
-}
-
-const removeDepts = () => {
-    connection.query(`SELECT * FROM department`, (err, results) => {
-        if(err) throw err;
-        inquirer.prompt([ 
-            {
-                type: "list",
-                name: "select",
-                choices() {
-                    const Array = [];
-                    results.forEach(({name})=> {
-                        Array.push(name);
-                    })
-                    return Array;
-                },
-                message: "select the department to remove ?"
-            },
-            {
-                name: "confirmRemove",
-                type: "input",
-                message: "Are you sure you want to remove (y/n)?",
-                validate: function confirmRemoval(ans){
-                    if(ans !== '' && ans === 'y' || ans !== '' && ans === 'n'){
-                        return true;
-                    } 
-                }
-            },
-        ])
-        .then((data) => {
-            console.log(data);
-            if (data.confirmRemove === 'y') {
-                connection.query(`DELETE FROM department WHERE ?`, {name: data.select}, (err, res) => {
-                    if(err) throw err;
-                    console.log('======================================')
-                    console.log('Department deleted successfully');
-                    console.log('======================================')
-                    Depts();
-                })
-            } else {
-                console.log('======================================')
-                console.log('no action taken');
-                console.log('======================================')
-                Depts();
-            }
-        })
-    });
+    })
+    .catch((err) => console.error(err));       
 };
 
+const removeDepts = async () => {
+    const deptChoices = [];
+    const deptArr = await deptNames();
+    deptArr.map(({name}) => {deptChoices.push(name)});
+    inquirer.prompt([ 
+        {
+            type: "list",
+            name: "select",
+            choices: deptChoices,
+            message: "select the department to remove ?"
+        },
+        {
+            name: "confirmRemove",
+            type: "input",
+            message: "Are you sure you want to remove (y/n)?",
+            validate: function confirmRemoval(ans){
+                if(ans !== '' && ans === 'y' || ans !== '' && ans === 'n'){
+                    return true;
+                };
+            }
+        },
+    ])
+    .then((data) => {
+        if (data.confirmRemove === 'y') {
+            connection.query(`DELETE FROM department WHERE ?`, {name: data.select}, (err, res) => {
+                if(err) throw err;
+                console.log('======================================');
+                console.log('Department deleted successfully');
+                console.log('======================================');
+                Depts();
+            })
+        } else {
+            console.log('======================================');
+            console.log('no action taken');
+            console.log('======================================');
+            Depts();
+        }
+    })
+    .catch((err) => console.error(err));
+};
 
 // start the app
 connection.connect((err) => {
