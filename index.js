@@ -66,10 +66,6 @@ const roleNames = () => {
 };
 
 
-
-
-
-
 const viewTest = async () => {
     const deptChoices = []
     const deptArr = await deptNames()
@@ -487,100 +483,85 @@ const viewRoles = () => {
     })
 };
 
-const addRoles = () => {
-    connection.query(`SELECT * FROM department`, (err, results) => {
-        if (err) throw err;
-        inquirer.prompt([{
-                type: "input",
-                name: "title",
-                message: "Please enter role title ?"
-            },
-            {
-                type: "input",
-                name: "salary",
-                message: "Please enter role monthly salary ?"
-            },
-            {
-                type: "list",
-                name: "dept",
-                choices() {
-                    const deptArray = [];
-                    results.forEach(({name})=> {
-                        deptArray.push(name)
-                    })
-                    return deptArray;
-                },
-                message: "Please enter department id ?"
-            },
-        ])
-        .then((data) => { 
-            let chosen;
-            results.forEach((item) => {
-                if (item.name === data.dept) {
-                    chosen = item;
-                    connection.query(`INSERT INTO role SET ? `, {
-                        title: data.title,
-                        salary: data.salary,
-                        department_id: chosen.id,
-                    }, (err, res) => {
-                        if (err) throw err;
-                        console.log('======================================');
-                        console.log('Role added successfully');
-                        console.log('======================================');
-                        Roles();
-                    })
-                }
-            });
-        })         
-    });
+const addRoles = async () => {
+    const deptChoices = [];
+    const deptArr = await deptNames();
+    deptArr.map(({name}) => {deptChoices.push(name)});
+    inquirer.prompt([{
+            type: "input",
+            name: "title",
+            message: "Please enter role title ?"
+        },
+        {
+            type: "input",
+            name: "salary",
+            message: "Please enter role monthly salary ?"
+        },
+        {
+            type: "list",
+            name: "dept",
+            choices: deptChoices,
+            message: "Please enter department belongs to ?"
+        },
+    ])
+    .then((data) => { 
+        let deptID = deptArr.filter(index => index.name.includes(data.dept))
+        if (deptID[0].name === data.dept) {
+            connection.query(`INSERT INTO role SET ? `, {
+                title: data.title,
+                salary: data.salary,
+                department_id: deptID[0].id,
+            }, (err, res) => {
+                if (err) throw err;
+                console.log('======================================');
+                console.log('Role added successfully');
+                console.log('======================================');
+                Roles();
+            })
+        }
+    })
+    .catch((err) => console.error(err));      
 };
 
-const removeRoles = () => {
-    console.log('');
-    connection.query(`SELECT * FROM role`, (err, results) => {
-        if(err) throw err;
-        inquirer.prompt([ 
-            {
-                type: "list",
-                name: "select",
-                choices() {
-                    const Array = [];
-                    results.forEach(({title})=> {
-                        Array.push(title);
-                    })
-                    return Array;
-                },
-                message: "select the role to remove ?"
-            },
-            {
-                name: "confirmRemove",
-                type: "input",
-                message: "Are you sure you want to remove (y/n)?",
-                validate: function confirmRemoval(ans){
-                    if(ans !== '' && ans === 'y' || ans !== '' && ans === 'n'){
-                        return true;
-                    } 
-                }
-            },
-        ])
-        .then((data) => {
-            console.log(data);
-            if (data.confirmRemove === 'y') {
-                connection.query(`DELETE FROM role WHERE ?`, {title: data.select}, (err, res) => {
-                    if(err) throw err;
-                    console.log('======================================');
-                    console.log('Role deleted successfully');
-                    console.log('======================================');
-                    Roles();
-                })
-            } else {
-                console.log('======================================')
-                console.log('no action taken');
-                console.log('======================================')
-                Roles();
+const removeRoles = async () => {
+    const roleChoices = [];
+    const roletArr = await roleNames();
+    roletArr.map(({title}) => {roleChoices.push(title)});
+    inquirer.prompt([ 
+        {
+            type: "list",
+            name: "select",
+            choices: roleChoices,
+            message: "select the role to remove ?"
+        },
+        {
+            name: "confirmRemove",
+            type: "input",
+            message: "Are you sure you want to remove (y/n)?",
+            validate: function confirmRemoval(ans){
+                if(ans !== '' && ans === 'y' || ans !== '' && ans === 'n'){
+                    return true;
+                };
             }
-        })
-    });
+        },
+    ])
+    .then((data) => {
+        if (data.confirmRemove === 'y') {
+            connection.query(`DELETE FROM role WHERE ?`, {title: data.select}, (err, res) => {
+                if(err) throw err;
+                console.log('======================================');
+                console.log('Role deleted successfully');
+                console.log('======================================');
+                Roles();
+            })
+        } else {
+            console.log('======================================');
+            console.log('no action taken');
+            console.log('======================================');
+            Roles();
+        }
+    })
+    .catch((err) => console.error(err));
 };
 
 
@@ -611,6 +592,7 @@ const Depts = () => {
                 break;
         }
     })
+    .catch((err) => console.error(err));
 };
 
 const viewDepts = () => {
@@ -625,27 +607,27 @@ const viewDeptBudget = async () => {
     const deptChoices = [];
     const deptArr = await deptNames();
     deptArr.map(({name}) => {deptChoices.push(name)});
-        inquirer.prompt([
-                {
-                    type: "list",
-                    name: "select",
-                    choices: deptChoices,
-                    message: "select the department to view utlilized budget ?"
-                },
-        ])
-        .then((data) => {
-                connection.query(`
-                SELECT name AS department, SUM(salary) AS Budget
-                FROM employee LEFT JOIN role ON employee.role_id = role.id 
-                LEFT JOIN department ON role.department_id = department.id
-                WHERE name = "${data.select}";`, 
-                (err, res) => {
-                    if(err) throw err;
-                    console.table(res);
-                    Depts();
-                });
-        })
-        .catch((err) => console.error(err));
+    inquirer.prompt([
+            {
+                type: "list",
+                name: "select",
+                choices: deptChoices,
+                message: "select the department to view utlilized budget ?"
+            },
+    ])
+    .then((data) => {
+            connection.query(`
+            SELECT name AS department, SUM(salary) AS Budget
+            FROM employee LEFT JOIN role ON employee.role_id = role.id 
+            LEFT JOIN department ON role.department_id = department.id
+            WHERE name = "${data.select}";`, 
+            (err, res) => {
+                if(err) throw err;
+                console.table(res);
+                Depts();
+            });
+    })
+    .catch((err) => console.error(err));
 };
 
 const addDepts = () => {
