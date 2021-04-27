@@ -38,6 +38,66 @@ const start = () => {
     .catch((error) => console.log(error));
 };
 
+// Choices functions
+const deptNames = () => {
+    var deptArray = []
+    return new Promise ((resolve, reject) => {
+        connection.query("SELECT * FROM department", (err, results) => {
+            if(err) throw err
+            results.forEach((item) => {
+                deptArray.push(item)
+            })
+            resolve (deptArray)
+        })
+    })
+};
+
+const roleNames = () => {
+    var roleArray = []
+    return new Promise ((resolve, reject) => {
+        connection.query("SELECT * FROM role", (err, results) => {
+            if(err) throw err
+            results.forEach((item) => {
+                roleArray.push(item)
+            })
+            resolve (roleArray)
+        })
+    })
+};
+
+
+const viewTest = async () => {
+    const deptChoices = []
+    const deptArr = await deptNames()
+    deptArr.map(({name}) => {deptChoices.push(name)})
+
+    // const roleChoices = []
+    // const roletArr = await roleNames()
+    // roletArr.map(({title}) => {roleChoices.push(title)})
+
+        inquirer.prompt([
+            {
+                type: "list",
+                name: "select-dept",
+                choices: deptChoices,
+                message: "Please select department ?",
+            },
+            // {
+            //     type: "list",
+            //     name: "select-role",
+            //     choices: roleChoices,
+            //     message: "Please select role ?",
+            // }
+        ]
+        )
+        .then((data) => {
+            console.log(data)
+            // console.log(data.select-role)
+            Employee();
+        })
+        .catch((err) => console.error(err));
+};
+
 
 // ------- Employee functions -------
 const Employee = () => {
@@ -46,13 +106,16 @@ const Employee = () => {
         name: 'select',
         type: 'list',
         message: 'Choose employee action ?',
-        choices: ['View All Employees', 'View All Employees By Department', 'View All Employees By Manager', 'Add Employee', "Remove Employee", "Update Employee Role", "Update Employee Manager", 'Back to main menu'],
+        choices: ['View All Employees', 'View Test' ,'View All Employees By Department', 'View All Employees By Manager', 'Add Employee', "Remove Employee", "Update Employee Role", "Update Employee Manager", 'Back to main menu'],
     })
     .then((data) => {
         switch (data.select) {
             case 'View All Employees':
                 viewAllEmployee();
                 break;
+            case 'View Test':
+                viewTest();
+                break;  
             case 'View All Employees By Department':
                 viewEmployeeByDept();
                 break;
@@ -89,75 +152,31 @@ const viewAllEmployee = () => {
         console.table(data);
         Employee();
     });
-};
 
-// not working, to be reviewed
-// var deptArray = []
-// function deptNames22 () {
-//     connection.query("SELECT * FROM department", (err, results) => {
-//         // if(err) throw err
-//          results.forEach(({name}) => {
-//              deptArray.push(name)
-//          })
-//         // if(err) throw err
-//         // results.map((item) => {
-//         //    return item.name
-//         // })
-//         // console.log(deptArray)
-//         console.log(deptArray)
-//         return deptArray
-//     })
-// }
-
-// function viewEmployeeByDept22 () {
-//     // deptNames()
-//         inquirer.prompt(
-//             {
-//                 type: "list",
-//                 name: "select-dept",
-//                 choices() {
-//                     return deptArray
-//                 },
-//                 message: "Please select department to view its employee ?",
-//             }
-//         )
-//         .then((data) => {
-//             console.log(data)
-//         })
-//         .catch((err) => console.error(err));
-
-// }
-
-const viewEmployeeByDept = () => {
-    connection.query(`SELECT * FROM department`, (err, results) => {
-        if(err) throw err;
-        inquirer.prompt([
-                {
-                    type: "list",
-                    name: "select",
-                    choices() {
-                        const Array = [];
-                        results.forEach(({name})=> {
-                            Array.push(name);
-                        })
-                        return Array;
-                    },
-                    message: "select the department to view employee information ?"
-                },
-        ])
-        .then((data) => {
-                connection.query(`
-                SELECT employee.id, employee.first_name, employee.last_name, name AS department, title
-                FROM employee LEFT JOIN role ON employee.role_id = role.id 
-                LEFT JOIN department ON role.department_id = department.id
-                WHERE name = '${data.select}'; `, (err, res) => {
-                    if(err) throw err;
-                    console.table(res);
-                    Employee();
-                });
-        })
-        .catch((err) => console.error(err));
-    });
+const viewEmployeeByDept = async () => {
+    const deptChoices = []
+    const deptArr = await deptNames()
+    deptArr.map(({name}) => {deptChoices.push(name)})
+    inquirer.prompt([
+            {
+                type: "list",
+                name: "select",
+                choices: deptChoices,
+                message: "select the department to view employee information ?"
+            },
+    ])
+    .then((data) => {
+            connection.query(`
+            SELECT employee.id, employee.first_name, employee.last_name, name AS department, title
+            FROM employee LEFT JOIN role ON employee.role_id = role.id 
+            LEFT JOIN department ON role.department_id = department.id
+            WHERE name = '${data.select}'; `, (err, res) => {
+                if(err) throw err;
+                console.table(res);
+                Employee();
+            });
+    })
+    .catch((err) => console.error(err));
 };
 
 const viewEmployeeByManager = () => {
