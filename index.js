@@ -1,16 +1,9 @@
-const mysql = require('mysql');
+//------------------ Modules ------------------
 const inquirer = require('inquirer');
 const cTable = require('console.table');
+const connection = require('./config/connection')
 
-const connection = mysql.createConnection({
-    host: 'localhost',
-    port: 3306,
-    user: 'root',
-    password: 'Lab@2021',
-    database: 'trackingDB',
-});
-
-//------------------ startup function ------------------
+//------------------ Startup function ------------------
 const start = () => {
     inquirer.prompt({
             name: 'action',
