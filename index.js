@@ -10,7 +10,7 @@ const connection = mysql.createConnection({
     database: 'trackingDB',
 });
 
-//start function
+//------------------ startup function ------------------
 const start = () => {
     inquirer.prompt({
             name: 'action',
@@ -38,7 +38,7 @@ const start = () => {
     .catch((error) => console.log(error));
 };
 
-// Choices functions
+// ------------------ Choices functions ------------------
 const deptNames = () => {
     var deptArray = []
     return new Promise ((resolve, reject) => {
@@ -69,7 +69,7 @@ const employeeNames = () => {
     var empArray = []
     return new Promise ((resolve, reject) => {
         connection.query(`
-        SELECT id, CONCAT(first_name, ' ', last_name) AS Manager 
+        SELECT id, CONCAT(first_name, ' ', last_name) AS Employee 
         FROM employee`, (err, results) => {
             if(err) throw err
             results.forEach((item) => {
@@ -80,61 +80,20 @@ const employeeNames = () => {
     })
 };
 
-
-
-
-const viewTest = async () => {
-    const deptChoices = []
-    const deptArr = await deptNames()
-    deptArr.map(({name}) => {deptChoices.push(name)})
-
-    // const roleChoices = []
-    // const roletArr = await roleNames()
-    // roletArr.map(({title}) => {roleChoices.push(title)})
-
-        inquirer.prompt([
-            {
-                type: "list",
-                name: "selectdept",
-                choices: deptChoices,
-                message: "Please select department ?",
-            }
-            // {
-            //     type: "list",
-            //     name: "selectrole",
-            //     choices: roleChoices,
-            //     message: "Please select role ?",
-            // }
-        ])
-        .then(data => {
-            console.log(data)
-            console.log(deptArr)
-            let deptID = deptArr.filter(index => index.name.includes(data.selectdept))
-            console.log(deptID[0].id)
-            // console.log(data.selectrole)
-            Employee();
-        })
-        .catch((err) => console.error(err));
-};
-
-
-// ------- Employee functions -------
+// ------------------ Employee functions ------------------
 const Employee = () => {
     inquirer
     .prompt({
         name: 'select',
         type: 'list',
         message: 'Choose employee action ?',
-        choices: ['View All Employees', 'View Test' ,'View All Employees By Department', 'View All Employees By Manager', 'Add Employee', "Remove Employee", "Update Employee Role", "Update Employee Manager", 'Back to main menu'],
+        choices: ['View All Employees','View All Employees By Department', 'View All Employees By Manager', 'Add Employee', "Remove Employee", "Update Employee Role", "Update Employee Manager", 'Back to main menu'],
     })
     .then((data) => {
         switch (data.select) {
             case 'View All Employees':
                 viewAllEmployee();
                 break;
-            case 'View Test':
-                viewTest();
-                break;  
             case 'View All Employees By Department':
                 viewEmployeeByDept();
                 break;
@@ -224,7 +183,6 @@ const viewEmployeeByManager = () => {
             results.forEach((item) => {
                 if (item.Manager === data.select) {
                     chosen = item;
-                    console.log(chosen)
                 };
             })
             connection.query(`
@@ -247,7 +205,7 @@ const addEmployee = async () => {
     roletArr.map(({title}) => {roleChoices.push(title)});
     const mgrChoices = [];
     const mgrArr = await employeeNames();
-    mgrArr.map(({Manager}) => {mgrChoices.push(Manager)});
+    mgrArr.map(({Employee}) => {mgrChoices.push(Employee)});
 
     inquirer.prompt([{
             type: "input",
@@ -274,19 +232,19 @@ const addEmployee = async () => {
     ])
     .then((data) => {
         let roletID = roletArr.filter(index => index.title.includes(data.roleChoice));
-        let mgrID = mgrArr.filter(index => index.Manager.includes(data.managerChoice));
-            connection.query('INSERT INTO employee SET ?', {
-                    first_name: data.first_name,
-                    last_name: data.last_name,
-                    role_id: roletID[0].id,
-                    manager_id: mgrID[0].id
-                },(err) => {if (err) throw err;
-                    console.log('======================================');
-                    console.log('new Employee Added successfully.');
-                    console.log('======================================');
-                    Employee();
-                }
-            );
+        let mgrID = mgrArr.filter(index => index.Employee.includes(data.managerChoice));
+            connection.query('INSERT INTO employee SET ?', 
+            {
+                first_name: data.first_name,
+                last_name: data.last_name,
+                role_id: roletID[0].id,
+                manager_id: mgrID[0].id
+            },(err) => {if (err) throw err;
+                console.log('======================================');
+                console.log('new Employee Added successfully.');
+                console.log('======================================');
+                Employee();
+            });
     })
     .catch((err) => console.error(err));
 }
@@ -296,21 +254,38 @@ const removeEmployee = () => {
     connection.query(`SELECT * FROM employee`, (err, res) => {
         if(err) throw err;
         console.table(res);
-        inquirer.prompt(
+        inquirer.prompt([
             {
                 type: "input",
                 name: "id",
                 message: "Enter employee id to remove ?"
-            }
-        )
+            },
+            {
+                name: "confirmRemove",
+                type: "input",
+                message: "Are you sure you want to remove (y/n)?",
+                validate: function confirmRemoval(ans){
+                    if(ans !== '' && ans === 'y' || ans !== '' && ans === 'n'){
+                        return true;
+                    };
+                }
+            },
+        ])
         .then((data) => {
-            connection.query(`DELETE FROM employee WHERE ?`, {id: data.id}, (err, res) => {
-                if(err) throw err;
+            if (data.confirmRemove === 'y') { 
+                connection.query(`DELETE FROM employee WHERE ?`, {id: data.id}, (err, res) => {
+                    if(err) throw err;
+                    console.log('======================================');
+                    console.log('Employee deleted successfully');
+                    console.log('======================================');
+                    Employee();
+                })
+            } else {
                 console.log('======================================');
-                console.log('Employee deleted successfully');
+                console.log('No action taken');
                 console.log('======================================');
                 Employee();
-            })
+            }
         })
     })
 }
@@ -329,8 +304,7 @@ const updateEmployeeRole = () => {
                         Array.push(fullname);
                     });
                     return Array;
-                },
-             
+                },  
                 message: 'Select employee ?',
             },
             {
@@ -338,7 +312,6 @@ const updateEmployeeRole = () => {
                 name: 'Choice',
                 choices() {
                     let Array = [];
-                    
                     results.forEach(({Role}) => {
                         Array.push(Role);
                     });
@@ -375,82 +348,53 @@ const updateEmployeeRole = () => {
             });
         })
         .catch((err) => {
-            if(err) throw err; console.log(err)
+            if(err) throw err; console.log(err);
         });
     });
 };
 
-const updateEmployeeManager = () => {
-    connection.query(`
-    SELECT id, CONCAT(first_name, ' ', last_name) AS Employee
-    FROM employee;`, 
-    (err, results) => {
-        if (err) throw err;
-        inquirer.prompt([
+const updateEmployeeManager = async () => {
+    const empChoices = [];
+    const empArr = await employeeNames();
+    empArr.map(({Employee}) => {empChoices.push(Employee)});
+    inquirer.prompt([
+        {
+            type: 'list',
+            name: 'empSelect',
+            choices: empChoices,
+            message: 'Select employee fullname ?',
+        },
+        {
+            type: 'list',
+            name: 'mgrSelect',
+            choices: empChoices,
+            message: 'Select manager that employee to report to ?',
+        },
+    ])
+    .then((data) => {
+        let mgrID = empArr.filter(index => index.Employee.includes(data.mgrSelect));
+        let empID = empArr.filter(index => index.Employee.includes(data.empSelect));
+        connection.query('UPDATE employee SET ? WHERE ?',[
             {
-                type: 'list',
-                name: 'empSelect',
-                choices() {
-                    let Array = [];
-                    results.forEach(({Employee}) => {
-                        Array.push(Employee);
-                    });
-                    return Array;
-                },
-                message: 'Select employee fullname ?',
+            manager_id: mgrID[0].id,
             },
             {
-                type: 'list',
-                name: 'mgrSelect',
-                choices() {
-                    let Array = [];
-                    results.forEach(({Employee}) => {
-                        Array.push(Employee);
-                    });
-                    return Array;
-                },
-                message: 'Select manager that employee to report to ?',
+            id: empID[0].id,
             },
-        ])
-        .then((data) => {
-            let chosenEmp, chosenMgr;
-            results.forEach((item) => {
-                if (item.Employee === data.empSelect) {
-                    chosenEmp = item;
-                };   
-            })
-
-            results.forEach((item) => {
-                if (item.Employee === data.mgrSelect) {
-                    chosenMgr = item;
-                    console.log(chosenMgr.id);
-                };   
-            })
-            connection.query('UPDATE employee SET ? WHERE ?',
-            [
-              {
-                manager_id: chosenMgr.id,
-              },
-              {
-                id: chosenEmp.id,
-              },
-            ],
-            (error) => {
-              if (error) throw err;
-              console.log('======================================');
-              console.log('Emploee manager updated successfully!');
-              console.log('======================================');
-              Employee()
-          }); 
-        })
-        .catch((err) => {
-            if(err) throw err; console.log(err)
-        });
+        ],(error) => {if (error) throw err;
+            console.log('======================================');
+            console.log('Emploee manager updated successfully!');
+            console.log('======================================');
+            Employee();
+        }); 
+    })
+    .catch((err) => {
+        if(err) throw err; console.log(err);
     });
 };
 
 
-// ------- Roles functions -------
+// ------------------ Roles functions ------------------
 const Roles = () => {
     inquirer.prompt(
         {
@@ -568,7 +512,7 @@ const removeRoles = async () => {
 };
 
 
-// ------- Departments functions -------
+// ------------------ Departments functions ------------------
 const Depts = () => {
     inquirer.prompt({
         name: 'select',
@@ -693,7 +637,7 @@ const removeDepts = async () => {
     .catch((err) => console.error(err));
 };
 
-// start the app
+// ------------------ Start the app ------------------
 connection.connect((err) => {
     if (err) throw err;
     start();
