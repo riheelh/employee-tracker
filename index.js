@@ -2,33 +2,44 @@
 const inquirer = require('inquirer');
 const cTable = require('console.table');
 const connection = require('./config/connection')
+const figlet = require('figlet');
 
 //------------------ Startup function ------------------
-const start = () => {
-    inquirer.prompt({
-            name: 'action',
-            type: 'list',
-            message: 'What would you like to do ?',
-            choices: ['Employees', "Roles", "Departments", "Exit"],
-        })
-    .then((data) => {
-        switch (data.action) {
-            case 'Employees':
-                Employee();
-                break;
-            case 'Roles':
-                Roles();
-                break;
-            case 'Departments':
-                Depts();
-                break;
-            case 'Exit':
-                console.log('GoodBye!')
-                connection.end();
-                break;
+const start = async () => {
+     figlet('Employee Tracker', function(err, data) {
+        if (err) {
+            console.log('Something went wrong...');
+            console.dir(err);
+            return;
         }
-    })
-    .catch((error) => console.log(error));
+        console.log('')
+        console.log(data)
+        console.log('')
+        inquirer.prompt({
+                name: 'action',
+                type: 'list',
+                message: 'What would you like to do ?',
+                choices: ['Employees', "Roles", "Departments", "Exit"],
+            })
+        .then((data) => {
+            switch (data.action) {
+                case 'Employees':
+                    Employee();
+                    break;
+                case 'Roles':
+                    Roles();
+                    break;
+                case 'Departments':
+                    Depts();
+                    break;
+                case 'Exit':
+                    console.log('GoodBye!')
+                    connection.end();
+                    break;
+            }
+        })
+        .catch((error) => console.log(error));
+    });
 };
 
 // ------------------ Choices functions ------------------

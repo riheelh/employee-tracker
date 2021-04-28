@@ -27,8 +27,6 @@ CREATE TABLE employee (
 
 
 -- View All Employee
-USE trackingdb;
-
 SELECT employee.id, employee.first_name, employee.last_name, role.title, department.name AS department, role.salary,
 CONCAT(manager.first_name, ' ', manager.last_name) AS manager
 FROM employee
@@ -37,4 +35,16 @@ LEFT JOIN department ON department_id = department.id
 LEFT JOIN employee manager ON employee.manager_id = manager.id;
 
 
+-- View Employee by Department
+SELECT employee.id, employee.first_name, employee.last_name, name AS department, title
+FROM employee LEFT JOIN role ON employee.role_id = role.id 
+LEFT JOIN department ON role.department_id = department.id
+WHERE name = 'Department Name';
+
+
+-- View Employee by Manager
+SELECT employee.id, employee.first_name, employee.last_name, name AS department, title
+FROM employee LEFT JOIN role ON employee.role_id = role.id 
+LEFT JOIN department ON role.department_id = department.id
+WHERE employee.manager_id = id;
 
