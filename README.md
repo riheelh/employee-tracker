@@ -7,7 +7,10 @@
 ## Description  
 A Node JS application helps to build basic employee information stored in mysql database.
 
-![Database Schema](Assets/schema.png)
+**URL :** [Video Demo](https://www.youtube.com/watch?v=3f4hJgWA8JE)
+
+![Employee Screen](Assets/cli-screen.PNG)
+
 
 ## Table of Contents
 
