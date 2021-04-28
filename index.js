@@ -65,6 +65,23 @@ const roleNames = () => {
     })
 };
 
+const employeeNames = () => {
+    var empArray = []
+    return new Promise ((resolve, reject) => {
+        connection.query(`
+        SELECT id, CONCAT(first_name, ' ', last_name) AS Manager 
+        FROM employee`, (err, results) => {
+            if(err) throw err
+            results.forEach((item) => {
+                empArray.push(item)
+            })
+            resolve (empArray)
+        })
+    })
+};
+
+
+
 
 const viewTest = async () => {
     const deptChoices = []
@@ -161,23 +178,23 @@ const viewEmployeeByDept = async () => {
     const deptArr = await deptNames()
     deptArr.map(({name}) => {deptChoices.push(name)})
     inquirer.prompt([
-            {
-                type: "list",
-                name: "select",
-                choices: deptChoices,
-                message: "select the department to view employee information ?"
-            },
+        {
+            type: "list",
+            name: "select",
+            choices: deptChoices,
+            message: "select the department to view employee information ?"
+        },
     ])
     .then((data) => {
-            connection.query(`
-            SELECT employee.id, employee.first_name, employee.last_name, name AS department, title
-            FROM employee LEFT JOIN role ON employee.role_id = role.id 
-            LEFT JOIN department ON role.department_id = department.id
-            WHERE name = '${data.select}'; `, (err, res) => {
-                if(err) throw err;
-                console.table(res);
-                Employee();
-            });
+        connection.query(`
+        SELECT employee.id, employee.first_name, employee.last_name, name AS department, title
+        FROM employee LEFT JOIN role ON employee.role_id = role.id 
+        LEFT JOIN department ON role.department_id = department.id
+        WHERE name = '${data.select}'; `, (err, res) => {
+            if(err) throw err;
+            console.table(res);
+            Employee();
+        });
     })
     .catch((err) => console.error(err));
 };
@@ -224,60 +241,54 @@ const viewEmployeeByManager = () => {
     });  
 }
 
-const addEmployee = () => {
-    connection.query(`SELECT * FROM role`, (err, results) => {
-        if (err) throw err;
-        inquirer.prompt([{
-                type: "input",
-                name: "first_name",
-                message: "Please enter first name ?"
-            },
-            {
-                type: "input",
-                name: "last_name",
-                message: "Please enter last name ?"
-            },
-            {
-                type: 'list',
-                name: 'roleChoice',
-                choices() {
-                    const Array = [];
-                    results.forEach(({title}) => {
-                        Array.push(title);
-                    });
-                    return Array;
-                },
-                message: 'Select employee role ?',
-            },
-            {
-                type: 'input',
-                name: 'managerChoice',
-                message: 'Select employee manager ?',
-            },
-        ])
-        .then((data) => {
-            let chosen;
-            results.forEach((item) => {
-                if (item.title === data.roleChoice) {
-                    chosen = item;
-                    connection.query('INSERT INTO employee SET ?', {
-                            first_name: data.first_name,
-                            last_name: data.last_name,
-                            role_id: chosen.id,
-                            // manager_id: data.manager_id
-                        },(err) => {
-                            if (err) throw err;
-                            console.log('======================================')
-                            console.log('new Employee Added successfully.');
-                            console.log('======================================')
-                            Employee();
-                        }
-                    );
-                };
-            })
-        })
-        .catch((err) => console.error(err));
+const addEmployee = async () => {
+    const roleChoices = [];
+    const roletArr = await roleNames();
+    roletArr.map(({title}) => {roleChoices.push(title)});
+    const mgrChoices = [];
+    const mgrArr = await employeeNames();
+    mgrArr.map(({Manager}) => {mgrChoices.push(Manager)});
+
+    inquirer.prompt([{
+            type: "input",
+            name: "first_name",
+            message: "Please enter first name ?"
+        },
+        {
+            type: "input",
+            name: "last_name",
+            message: "Please enter last name ?"
+        },
+        {
+            type: 'list',
+            name: 'roleChoice',
+            choices: roleChoices,
+            message: 'Select employee role ?',
+        },
+        {
+            type: 'list',
+            name: 'managerChoice',
+            choices: mgrChoices,
+            message: 'Select employee manager ?',
+        },
+    ])
+    .then((data) => {
+        let roletID = roletArr.filter(index => index.title.includes(data.roleChoice));
+        let mgrID = mgrArr.filter(index => index.Manager.includes(data.managerChoice));
+            connection.query('INSERT INTO employee SET ?', {
+                    first_name: data.first_name,
+                    last_name: data.last_name,
+                    role_id: roletID[0].id,
+                    manager_id: mgrID[0].id
+                },(err) => {if (err) throw err;
+                    console.log('======================================');
+                    console.log('new Employee Added successfully.');
+                    console.log('======================================');
+                    Employee();
+                }
+            );
     })
+    .catch((err) => console.error(err));
 }
 
 const removeEmployee = () => {
@@ -341,15 +352,7 @@ const updateEmployeeRole = () => {
             results.forEach((item) => {
                 n = data.empSelect.indexOf(".");
                 emp_id_sub = data.empSelect.substring(0,n)
-                // 0123456
-                // 2021.
-                // indexof(")") -> 5
-                // substring(1,5) -> 2021
                 if (item.id === parseInt(emp_id_sub)) {
-                    // 0123456
-                    // (2021).
-                    // indexof(")") -> 5
-                    // substring(1,5) -> 2021
                     m = data.Choice.indexOf(")");
                     role_id_sub = data.Choice.substring(1,m)                   
                     connection.query('UPDATE employee SET ? WHERE ?',
